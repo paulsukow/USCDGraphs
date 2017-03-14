@@ -1,12 +1,6 @@
 package basicgraph;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 import util.GraphLoader;
 
@@ -110,8 +104,6 @@ public abstract class Graph {
 	 * 	via incoming edges to v. 
 	 */
 	public abstract List<Integer> getInNeighbors(int v);
-	
-	
 
 	/** 
 	 * The degree sequence of a graph is a sorted (organized in numerical order 
@@ -121,8 +113,15 @@ public abstract class Graph {
 	 * @return The degree sequence of this graph.
 	 */
 	public List<Integer> degreeSequence() {
-		// XXX: Implement in part 1 of week 1
-		return null;
+		List<Integer> degSeq = new ArrayList<>();
+
+		for (int i = 0;  i < numVertices; i++) {
+			degSeq.add(i, getNeighbors(i).size() + getInNeighbors(i).size());
+		}
+
+		Comparator descendingOrder = Collections.reverseOrder();
+		Collections.sort(degSeq, descendingOrder);
+		return degSeq;
 	}
 	
 	/**
@@ -262,8 +261,12 @@ public abstract class Graph {
 		// Test your distance2 code here.
 		System.out.println("Testing distance-two methods on sample graphs...");
 		System.out.println("Goal: implement method using two approaches.");
+		GraphAdjList simpleGraphAdjList = new GraphAdjList();
+		GraphLoader.loadRoadMap("data/testdata/simpletest.map", simpleGraphAdjList);
+		System.out.println(simpleGraphAdjList.getDistance2(0));
 
-
-		
+		GraphAdjMatrix simpleGraphAdjMatrix = new GraphAdjMatrix();
+		GraphLoader.loadRoadMap("data/testdata/simpletest.map", simpleGraphAdjMatrix);
+		System.out.println(simpleGraphAdjMatrix.getDistance2(0));
 	}
 }

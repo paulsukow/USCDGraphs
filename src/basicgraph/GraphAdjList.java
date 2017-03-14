@@ -18,7 +18,6 @@ import java.util.Set;
  */
 public class GraphAdjList extends Graph {
 
-
 	private Map<Integer,ArrayList<Integer>> adjListsMap;
 	
 	/** 
@@ -95,8 +94,19 @@ public class GraphAdjList extends Graph {
 	 * @return List<Integer> a list of indices of vertices.  
 	 */		
 	 public List<Integer> getDistance2(int v) {
-		 // XXX: Implement this method in week 1
-		 return null;
+		 List<Integer> oneHop = getNeighbors(v);
+		 List<Integer> twoHop = new ArrayList<>();
+
+		 for (int i = 0; i < oneHop.size(); i++) {
+			 int vertex = oneHop.get(i);
+			 List<Integer> oneHopFromVertex = getNeighbors(vertex);
+
+			 for (int j = 0; j < oneHopFromVertex.size(); j++) {
+				 twoHop.add(oneHopFromVertex.get(j));
+			 }
+		 }
+
+		 return twoHop;
 	}
 	
 	/**
@@ -115,8 +125,4 @@ public class GraphAdjList extends Graph {
 		}
 		return s;
 	}
-
-
-
-
 }
