@@ -7,13 +7,11 @@
  */
 package roadgraph;
 
-
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import geography.GeographicPoint;
 import util.GraphLoader;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * @author UCSD MOOC development team and YOU
@@ -24,14 +22,16 @@ import util.GraphLoader;
  */
 public class MapGraph {
 	//TODO: Add your member variables here in WEEK 2
-	
+	private HashMap<GeographicPoint, MapNode> vertices;
+	private int numberOfEdges;
 	
 	/** 
 	 * Create a new empty MapGraph 
 	 */
-	public MapGraph()
-	{
+	public MapGraph() {
 		// TODO: Implement in this constructor in WEEK 2
+		vertices = new HashMap<>();
+		numberOfEdges = 0;
 	}
 	
 	/**
@@ -41,7 +41,7 @@ public class MapGraph {
 	public int getNumVertices()
 	{
 		//TODO: Implement this method in WEEK 2
-		return 0;
+		return vertices.size();
 	}
 	
 	/**
@@ -51,7 +51,7 @@ public class MapGraph {
 	public Set<GeographicPoint> getVertices()
 	{
 		//TODO: Implement this method in WEEK 2
-		return null;
+		return vertices.keySet();
 	}
 	
 	/**
@@ -61,7 +61,7 @@ public class MapGraph {
 	public int getNumEdges()
 	{
 		//TODO: Implement this method in WEEK 2
-		return 0;
+		return numberOfEdges;
 	}
 
 	
@@ -73,10 +73,14 @@ public class MapGraph {
 	 * @return true if a node was added, false if it was not (the node
 	 * was already in the graph, or the parameter is null).
 	 */
-	public boolean addVertex(GeographicPoint location)
-	{
+	public boolean addVertex(GeographicPoint location) {
 		// TODO: Implement this method in WEEK 2
-		return false;
+		if (location == null || vertices.containsKey(location)) {
+			return false;
+		}
+
+		vertices.put(location, new MapNode(location));
+		return true;
 	}
 	
 	/**
@@ -95,7 +99,18 @@ public class MapGraph {
 			String roadType, double length) throws IllegalArgumentException {
 
 		//TODO: Implement this method in WEEK 2
-		
+		if (from == null || to == null || roadName == null || roadType == null) {
+			throw new IllegalArgumentException("parameters cannot be null");
+		} else if (!vertices.containsKey(from) || !vertices.containsKey(to)) {
+			throw new IllegalArgumentException("from or to locations do not exist in map");
+		} else if (length < 0) {
+			throw new IllegalArgumentException("length cannot be negative");
+		}
+
+		MapEdge mapEdge = new MapEdge(from, to, roadName, roadType, length);
+		MapNode fromNode = vertices.get(from);
+		fromNode.addEdge(mapEdge);
+		numberOfEdges++;
 	}
 	
 
@@ -124,13 +139,61 @@ public class MapGraph {
 			 					     GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 2
-		
-		// Hook for visualization.  See writeup.
-		//nodeSearched.accept(next.getLocation());
+		HashMap<GeographicPoint, GeographicPoint> parentMap = new HashMap<>();
+		boolean found = doBFSSearch(start, goal, parentMap);
 
-		return null;
+		if (!found) {
+			System.out.println("No path exists");
+			return new LinkedList<GeographicPoint>();
+		}
+
+		return constructPath(start, goal, parentMap);
 	}
-	
+
+	private boolean doBFSSearch(GeographicPoint start, GeographicPoint goal, HashMap<GeographicPoint, GeographicPoint> parentMap) {
+		List<GeographicPoint> visited = new ArrayList<>();
+		LinkedList<GeographicPoint> queue = new LinkedList<>();
+		visited.add(start);
+		queue.add(start);
+		boolean found = false;
+
+		while (!queue.isEmpty()) {
+			GeographicPoint curr = queue.poll();
+			System.out.println("Current: " + curr);
+
+			if (curr.equals(goal)) {
+				found = true;
+				break;
+			}
+
+			List<GeographicPoint> neighbors = vertices.get(curr).getNeighbors();
+
+			ListIterator<GeographicPoint> it = neighbors.listIterator(neighbors.size());
+			while (it.hasPrevious()) {
+				GeographicPoint next = it.previous();
+				if (!visited.contains(next)) {
+					visited.add(next);
+					parentMap.put(next, curr);
+					queue.add(next);
+				}
+			}
+		}
+
+		return found;
+	}
+
+	private List<GeographicPoint> constructPath(GeographicPoint start, GeographicPoint goal, HashMap<GeographicPoint, GeographicPoint> parentMap) {
+		LinkedList<GeographicPoint> path = new LinkedList<>();
+		GeographicPoint curr = goal;
+		while (curr != start) {
+            path.addFirst(curr);
+            curr = parentMap.get((curr));
+        }
+		path.addFirst(start);
+		System.out.println(path.toString());
+
+		return path;
+	}
 
 	/** Find the path from start to goal using Dijkstra's algorithm
 	 * 
@@ -172,7 +235,8 @@ public class MapGraph {
 	 * @return The list of intersections that form the shortest path from 
 	 *   start to goal (including both start and goal).
 	 */
-	public List<GeographicPoint> aStarSearch(GeographicPoint start, GeographicPoint goal) {
+	public List<GeographicPoint> aStarSearch(GeographicPoint start, GeographicPoint goal)
+	{
 		// Dummy variable for calling the search algorithms
         Consumer<GeographicPoint> temp = (x) -> {};
         return aStarSearch(start, goal, temp);
@@ -197,8 +261,27 @@ public class MapGraph {
 		return null;
 	}
 
-	
-	
+	public void printGraph()
+	{
+		for (GeographicPoint key : vertices.keySet()) {
+			MapNode mapNode = vertices.get(key);
+			List<MapEdge> mapEdges = mapNode.getEdges();
+
+			System.out.println("Vertex: " + key);
+
+			int edgeNumber = 0;
+			for (MapEdge mapEdge : mapEdges) {
+				edgeNumber++;
+				System.out.println("Edge: " + edgeNumber);
+				System.out.println("Start: " + mapEdge.getStart());
+				System.out.println("End: " + mapEdge.getEnd());
+				System.out.println("Road Name: " + mapEdge.getRoadName());
+				System.out.println("Road Type: " + mapEdge.getRoadType());
+				System.out.println("Length: " + mapEdge.getLength());
+			}
+		}
+	}
+
 	public static void main(String[] args)
 	{
 		System.out.print("Making a new map...");
@@ -206,7 +289,9 @@ public class MapGraph {
 		System.out.print("DONE. \nLoading the map...");
 		GraphLoader.loadRoadMap("data/testdata/simpletest.map", firstMap);
 		System.out.println("DONE.");
-		
+		firstMap.printGraph();
+		firstMap.bfs(new GeographicPoint(1.0, 1.0), new GeographicPoint(8.0, -1.0));
+
 		// You can use this method for testing.  
 		
 		
